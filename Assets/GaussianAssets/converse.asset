@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33b71fae31e6c7d438e8566dc713e666, type: 3}
+  m_Name: converse
+  m_EditorClassIdentifier: 
+  m_FormatVersion: 20231020
+  m_SplatCount: 182960
+  m_BoundsMin: {x: -6.628037, y: -27.577124, z: -20.739298}
+  m_BoundsMax: {x: 13.006875, y: 20.785715, z: 0.22619434}
+  m_DataHash:
+    serializedVersion: 2
+    Hash: dcf11a898c37e83b22551998dc52e3f9
+  m_PosFormat: 0
+  m_ScaleFormat: 0
+  m_SHFormat: 0
+  m_ColorFormat: 0
+  m_PosData: {fileID: 4900000, guid: 4ae409a944413fe4faff04f1796f4a9d, type: 3}
+  m_ColorData: {fileID: 4900000, guid: eb7ef00aa79a93e4ca91b7ca1383b336, type: 3}
+  m_OtherData: {fileID: 4900000, guid: 148d74dda8b919a4f9ac6365cf2bd962, type: 3}
+  m_SHData: {fileID: 4900000, guid: e5db9c65bceab11419922c134ba7bcbf, type: 3}
+  m_ChunkData: {fileID: 0}
+  m_Cameras: []
