@@ -100,6 +100,9 @@ namespace GaussianSplatting.Runtime
         }
 
         // ReSharper disable once MemberCanBePrivate.Global - used by HDRP/URP features that are not always compiled
+        // 수집한 Gaussian Splat 오브젝트들을 정렬하고 렌더링하는 함수
+        // 각 Splat의 렌더링 모드에 따라 적절한 머티리얼을 선택
+        // 이후 해당 데이터로부터 GPU 버퍼에 필요한 정보를 설정하여 렌더링 명령을 전달
         public Material SortAndRenderSplats(Camera cam, CommandBuffer cmb)
         {
             Material matComposite = null;
@@ -108,6 +111,32 @@ namespace GaussianSplatting.Runtime
                 var gs = kvp.Item1;
                 matComposite = gs.m_MatComposite;
                 var mpb = kvp.Item2;
+
+                // 별도 함수로 빼는게 좋을 텐데.. 이쯤 넣어볼까
+                // 사실 라이팅은 특히 Compute Shader를 쓰는게 좋긴한데 (for GPU 효율적으로 사용, 유니티엔진에서도 붙여서 사용가능)..
+                // https://gamzachips.tistory.com/25
+                // https://docs.unity3d.com/kr/2018.4/Manual/class-ComputeShader.html
+                // 그게 더 한단계 작업이 필요해서 어려워하실듯해서 이렇게 그냥 바로 있던 쉐이더들 쓰는게 나을듯해요
+
+                // 광원 데이터 계산
+                //Vector3 lightDir = light.transform.forward;  // 광원의 방향
+                //Vector3 lightPos = light.transform.position; // 광원의 위치
+                //Color lightColor = light.color * light.intensity;  // 광원의 색상과 강도
+                //Vector3 cameraPos = cam.transform.position;  // 카메라(뷰어)의 위치
+
+                //// 머티리얼 프로퍼티에 광원 데이터를 전달
+                //mpb.SetVector("_LightDirection", lightDir);
+                //mpb.SetVector("_LightPosition", lightPos);
+                //mpb.SetColor("_LightColor", lightColor);
+
+                //// 뷰 방향 (카메라 위치 전달)
+                //mpb.SetVector("_CameraPosition", cameraPos);
+
+                //// 정반사광 강도 및 반사광 지수 전달
+                //float specularIntensity = 0.5f; // 예시로 0.5로 설정
+                //float specularPower = 32.0f;    // 예시로 32.0으로 설정 (광택이 있는 표면)
+                //mpb.SetFloat("_SpecularIntensity", specularIntensity);
+                //mpb.SetFloat("_SpecularPower", specularPower);
 
                 // sort
                 var matrix = gs.transform.localToWorldMatrix;
