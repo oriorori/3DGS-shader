@@ -28,6 +28,8 @@ namespace GaussianSplatting.Runtime
         readonly HashSet<Camera> m_CameraCommandBuffersDone = new();
         readonly List<(GaussianSplatRenderer, MaterialPropertyBlock)> m_ActiveSplats = new();
 
+        public Light lightObject;
+
         CommandBuffer m_CommandBuffer;
 
         public void RegisterSplat(GaussianSplatRenderer r)
@@ -39,6 +41,10 @@ namespace GaussianSplatting.Runtime
             }
 
             m_Splats.Add(r, new MaterialPropertyBlock());
+        }
+        public void SetLightObject(Light _lightObject)
+        {
+            lightObject = _lightObject;
         }
 
         public void UnregisterSplat(GaussianSplatRenderer r)
@@ -103,7 +109,7 @@ namespace GaussianSplatting.Runtime
         // 수집한 Gaussian Splat 오브젝트들을 정렬하고 렌더링하는 함수
         // 각 Splat의 렌더링 모드에 따라 적절한 머티리얼을 선택
         // 이후 해당 데이터로부터 GPU 버퍼에 필요한 정보를 설정하여 렌더링 명령을 전달
-        public Material SortAndRenderSplats(Camera cam, CommandBuffer cmb)
+        public Material SortAndRenderSplats(Camera cam, CommandBuffer cmb, Light lightobject)
         {
             Material matComposite = null;
             foreach (var kvp in m_ActiveSplats)
@@ -117,26 +123,25 @@ namespace GaussianSplatting.Runtime
                 // https://gamzachips.tistory.com/25
                 // https://docs.unity3d.com/kr/2018.4/Manual/class-ComputeShader.html
                 // 그게 더 한단계 작업이 필요해서 어려워하실듯해서 이렇게 그냥 바로 있던 쉐이더들 쓰는게 나을듯해요
-
                 // 광원 데이터 계산
-                //Vector3 lightDir = light.transform.forward;  // 광원의 방향
-                //Vector3 lightPos = light.transform.position; // 광원의 위치
-                //Color lightColor = light.color * light.intensity;  // 광원의 색상과 강도
-                //Vector3 cameraPos = cam.transform.position;  // 카메라(뷰어)의 위치
+                Vector3 lightDir = lightobject.transform.forward;
+                Vector3 lightPos = lightobject.transform.position;
+                Color lightColor = lightobject.color * lightobject.intensity;
+                Vector3 cameraPos = cam.transform.position;
 
-                //// 머티리얼 프로퍼티에 광원 데이터를 전달
-                //mpb.SetVector("_LightDirection", lightDir);
-                //mpb.SetVector("_LightPosition", lightPos);
-                //mpb.SetColor("_LightColor", lightColor);
+                // 머티리얼 프로퍼티에 광원 데이터, 뷰 방향 전달
+                mpb.SetVector("_LightDirection", lightDir);
+                mpb.SetVector("_LightPosition", lightPos);
+                mpb.SetColor("_LightColor", lightColor);
+                mpb.SetVector("_CameraPosition", cameraPos);
 
-                //// 뷰 방향 (카메라 위치 전달)
-                //mpb.SetVector("_CameraPosition", cameraPos);
 
-                //// 정반사광 강도 및 반사광 지수 전달
-                //float specularIntensity = 0.5f; // 예시로 0.5로 설정
-                //float specularPower = 32.0f;    // 예시로 32.0으로 설정 (광택이 있는 표면)
-                //mpb.SetFloat("_SpecularIntensity", specularIntensity);
-                //mpb.SetFloat("_SpecularPower", specularPower);
+                //정반사광 강도 및 반사광 지수 전달
+                float specularIntensity = 0.5f;
+                float specularPower = 32.0f;
+                mpb.SetFloat("_SpecularIntensity", specularIntensity);
+                mpb.SetFloat("_SpecularPower", specularPower);
+
 
                 // sort
                 var matrix = gs.transform.localToWorldMatrix;
@@ -219,7 +224,7 @@ namespace GaussianSplatting.Runtime
             m_CommandBuffer.ClearRenderTarget(RTClearFlags.Color, new Color(0, 0, 0, 0), 0, 0);
 
             // add sorting, view calc and drawing commands for each splat object
-            Material matComposite = SortAndRenderSplats(cam, m_CommandBuffer);
+            Material matComposite = SortAndRenderSplats(cam, m_CommandBuffer, lightObject);
 
             // compose
             m_CommandBuffer.BeginSample(s_ProfCompose);
@@ -228,6 +233,7 @@ namespace GaussianSplatting.Runtime
             m_CommandBuffer.EndSample(s_ProfCompose);
             m_CommandBuffer.ReleaseTemporaryRT(GaussianSplatRenderer.Props.GaussianSplatRT);
         }
+
     }
 
     [ExecuteInEditMode]
@@ -242,6 +248,11 @@ namespace GaussianSplatting.Runtime
             DebugChunkBounds,
         }
         public GaussianSplatAsset m_Asset;
+
+        // light object 선언
+        // inspector에 왜 안뜨는지 문제 해결 필요
+        public Light lightObject;
+
 
         [Range(0.1f, 2.0f)] [Tooltip("Additional scaling factor for the splats")]
         public float m_SplatScale = 1.0f;
@@ -467,6 +478,9 @@ namespace GaussianSplatting.Runtime
             if (!SystemInfo.supportsComputeShaders)
                 return;
 
+            // 만약 GS object inspector에 light 부분이 없으면 아래 코드로 대체
+            lightObject = FindObjectOfType<Light>();
+
             m_MatSplats = new Material(m_ShaderSplats) {name = "GaussianSplats"};
             m_MatComposite = new Material(m_ShaderComposite) {name = "GaussianClearDstAlpha"};
             m_MatDebugPoints = new Material(m_ShaderDebugPoints) {name = "GaussianDebugPoints"};
@@ -474,6 +488,7 @@ namespace GaussianSplatting.Runtime
 
             m_Sorter = new GpuSorting(m_CSSplatUtilities);
             GaussianSplatRenderSystem.instance.RegisterSplat(this);
+            GaussianSplatRenderSystem.instance.SetLightObject(lightObject);
 
             CreateResourcesForAsset();
         }

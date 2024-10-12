@@ -20,6 +20,7 @@ namespace GaussianSplatting.Runtime
             RTHandle m_RenderTarget;
             internal ScriptableRenderer m_Renderer = null;
             internal CommandBuffer m_Cmb = null;
+            internal Light lightObject = null;
 
             public void Dispose()
             {
@@ -43,9 +44,11 @@ namespace GaussianSplatting.Runtime
             {
                 if (m_Cmb == null)
                     return;
+                if (lightObject == null)
+                    return;
 
                 // add sorting, view calc and drawing commands for each splat object
-                Material matComposite = GaussianSplatRenderSystem.instance.SortAndRenderSplats(renderingData.cameraData.camera, m_Cmb);
+                Material matComposite = GaussianSplatRenderSystem.instance.SortAndRenderSplats(renderingData.cameraData.camera, m_Cmb, lightObject);
 
                 // compose
                 m_Cmb.BeginSample(GaussianSplatRenderSystem.s_ProfCompose);

@@ -7,6 +7,16 @@ Shader "Gaussian Splatting/Render Splats"
  //        _LightColor ("Light Color", Color) = (1, 1, 1, 1)
  //    }
 
+	Properties
+		{
+			_LightDirection ("Light Direction", Vector) = (0, 0, -1, 0)
+			_LightPositon ("Light Position", Vector) = (0, 0, 0, 0)
+			_LightColor ("Light Color", Color) = (1, 1, 1, 1)
+			_SpecularIntensity ("Specular Intensity", float) = 0.5
+			_SpecularPower ("Specular Power", float) = 32.0
+			_CameraPosition ("Camera Position", Vector) = (0, 0, 0, 0)
+		}
+
     SubShader
     {
         Tags { "RenderType"="Transparent" "Queue"="Transparent" }
@@ -39,8 +49,12 @@ ByteAddressBuffer _SplatSelectedBits; // °¢ ½ºÇÃ·§ÀÇ ¼±ÅÃ »óÅÂ¸¦ ÀúÀåÇÏ´Â ºñÆ® Ç
 uint _SplatBitsValid; //¼±ÅÃ ºñÆ®°¡ À¯È¿ÇÑÁö ¿©ºÎ¸¦ ³ªÅ¸³»´Â ÇÃ·¡±×
 
 // Á¶¸í °ü·Ã º¯¼ö
-// float4 _LightDirection;
-// float4 _LightColor;
+float4 _LightColor;
+float4 _LightDirection;
+float4 _LightPosition;
+float4 _CameraPosition;
+float _SpecularIntensity;
+float _SpecularPower;
 
 // Á¤Á¡ ¼ÎÀÌ´õ (vert ÇÔ¼ö)
 v2f vert (uint vtxID : SV_VertexID, uint instID : SV_InstanceID)
@@ -111,24 +125,34 @@ half4 frag (v2f i) : SV_Target
 		i.col.rgb = lerp(i.col.rgb, selectedColor, 0.5);
 	}
 	
-	// ÀÌÂë¿¡ ¾Æ¸¶ Á¶¸í °è»ê Ãß°¡ÇØ¾ßÇÒ°Å¿¡¿ä..
-	// phong reflection modelÀÌ´Ï±î
-    // float3 lightDir = normalize(_LightDirection.xyz);
-    // float3 normal = float3(0, 0, 1); // ±âº» ³ë¸» °ª (½ºÇÃ·§Àº È­¸é »ó¿¡ ÆòÆòÇÑ ¿øÇüÀ¸·Î °¡Á¤) //¾Æ¸¶ ÀÌ°Å º¤ÅÍ°¡ ¾ÈÀÌ»µ¼­ Á¶¸íÀÌ ÀÌ»óÇÏ°Ô ³ª¿Ã¼öµµ!
-	// float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos); // Ä«¸Þ¶ó¿¡¼­ ½ºÇÃ·§±îÁöÀÇ ¹æÇâ
-	// float3 reflectDir = reflect(-lightDir, normal); // ¹Ý»çµÈ ºûÀÇ ¹æÇâ (¿øÀÌ Ç¥¸é¿¡ ´ê¾Æ ¹Ý»çµÈ ¹æÇâÀ» °è»ê)
+	
+	//ÀÏ´Ü directional light object·Î ÁøÇà
+	float3 lightDir = normalize(_LightDirection.xyz);
 
-	// µðÇ»Áî Á¶¸í °è»ê 
-    // float diffuse = max(dot(normal, lightDir), 0.0);
-    // float3 diffuseColor = _LightColor.rgb * diffuse;
+	//point light object·Î º¯°æ½Ã ¾Æ·¡Ã³·³ º¯°æ
+	//float3 currentPos = i.vertex.xyz;
+	//float3 lightDir = normalize(_LightPosition.xyz - currentPos);
 
-	// Á¤¹Ý»ç±¤ (Phong Shading) °è»ê Ãß°¡
-	// float specular = pow(max(dot(viewDir, reflectDir), 0.0), _SpecularPower); // ½ºÆäÅ§·¯ °­µµ °è»ê (Ä«¸Þ¶ó ½Ã¼± ¹æÇâ°ú ¹Ý»çµÈ ºûÀÇ °¢µµ Â÷ÀÌ¿¡ µû¸¥ Á¤¹Ý»ç±¤À» °è»ê)
-	// float3 specularColor = _LightColor.rgb * specular * _SpecularIntensity; // ½ºÆäÅ§·¯ »ö»ó Àû¿ë
+	//normal vector ¼öÁ¤ ÇÊ¿ä
+	//ÇöÀç vertex¿Í ÀÎÁ¢ÇÑ vertex¸¦ »ç¿ëÇØ ¸¸µç »ï°¢ÇüÀÇ normal vector¸¦ ±¸ÇÏ´Â½ÄÀ¸·Î
+	float3 normal = float3(0, 0, 1);
 
+	// float3 normal = float3(0, 0, 1);
+	// float3 viewDir = normalize(_CameraPosition - i.worldPos); //Ä«¸Þ¶ó¿¡¼­ ½ºÇÃ·§±îÁöÀÇ ¹æÇâ
+	// float3 reflectDir = reflect(-lightDir, normal); // ¹Ý»çµÈ ºûÀÇ ¹æÇâ(¿øÀÌ Ç¥¸é¿¡ ´ê¾Æ ¹Ý»çµÈ ¹æÇâÀ» °è»ê)
 
-	// ÃÖÁ¾ »ö»ó¿¡ µðÇ»Áî¿Í ½ºÆäÅ§·¯ Á¶¸í Àû¿ë
+	// diffuse °è»ê
+	float diffuse = max(dot(normal, lightDir), 0.0);
+	float3 diffuseColor = _LightColor.rgb * diffuse;
+	
+	// Á¤¹Ý»ç°ü (phongshading) °è»ê Ãß°¡
+	// float specular = pow(max(dot(viewDir, reflectDir), 0.0), _SpecularPower); //½ºÆäÅ§·¯ °­µµ °è»ê (Ä«¸Þ¶ó ½Ã¼± ¹æÇâ°ú ¹Ý»çµÈ ºûÀÇ °¢µµ Â÷ÀÌ¿¡ µû¸¥ Á¤¹Ý»ç±¤À» °è»ê)
+	// float3 specularColor = _LightColor.rgb * specular * _SpecularIntensity; //½ºÆäÅ§·¯ »ö»ó Àû¿ë
+
+	i.col.rgb *=  (_LightColor.rgb + diffuseColor);
 	// i.col.rgb *= (diffuseColor + specularColor);
+
+
 
     if (alpha < 1.0/255.0); //Åõ¸íµµ°¡ 1/255 ÀÌÇÏÀÌ¸é ÇØ´ç ÇÁ·¡±×¸ÕÆ®¸¦ ·»´õ¸µÇÏÁö ¾ÊÀ½
 
