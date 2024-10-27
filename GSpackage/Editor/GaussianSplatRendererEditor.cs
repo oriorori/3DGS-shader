@@ -21,6 +21,7 @@ namespace GaussianSplatting.Editor
         const string kPrefExportBake = "nesnausk.GaussianSplatting.ExportBakeTransform";
 
         SerializedProperty m_PropAsset;
+        SerializedProperty m_PropLightObject;
         SerializedProperty m_PropSplatScale;
         SerializedProperty m_PropOpacityScale;
         SerializedProperty m_PropSHOrder;
@@ -60,6 +61,7 @@ namespace GaussianSplatting.Editor
             m_ExportBakeTransform = EditorPrefs.GetBool(kPrefExportBake, false);
 
             m_PropAsset = serializedObject.FindProperty("m_Asset");
+            m_PropLightObject = serializedObject.FindProperty("m_LightObject");
             m_PropSplatScale = serializedObject.FindProperty("m_SplatScale");
             m_PropOpacityScale = serializedObject.FindProperty("m_OpacityScale");
             m_PropSHOrder = serializedObject.FindProperty("m_SHOrder");
@@ -100,6 +102,9 @@ namespace GaussianSplatting.Editor
                     : "Gaussian Splat asset is not assigned or is empty";
                 EditorGUILayout.HelpBox(msg, MessageType.Error);
             }
+            EditorGUILayout.Space();
+            GUILayout.Label("Light", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(m_PropLightObject);
 
             EditorGUILayout.Space();
             GUILayout.Label("Render Options", EditorStyles.boldLabel);

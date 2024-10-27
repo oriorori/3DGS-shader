@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: MIT
 Shader "Gaussian Splatting/Render Splats"
 {
-	// Properties
- //    {
- //        _LightDirection ("Light Direction", Vector) = (0, 0, -1, 0)
- //        _LightColor ("Light Color", Color) = (1, 1, 1, 1)
- //    }
 
 	Properties
 		{
@@ -137,7 +132,6 @@ half4 frag (v2f i) : SV_Target
 	//현재 vertex와 인접한 vertex를 사용해 만든 삼각형의 normal vector를 구하는식으로
 	float3 normal = float3(0, 0, 1);
 
-	// float3 normal = float3(0, 0, 1);
 	// float3 viewDir = normalize(_CameraPosition - i.worldPos); //카메라에서 스플랫까지의 방향
 	// float3 reflectDir = reflect(-lightDir, normal); // 반사된 빛의 방향(원이 표면에 닿아 반사된 방향을 계산)
 
