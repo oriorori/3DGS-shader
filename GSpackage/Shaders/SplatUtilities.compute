@@ -16,6 +16,7 @@
 #pragma kernel CSScaleSelection
 #pragma kernel CSExportData
 #pragma kernel CSCopySplats
+#pragma kernel CSNormBuffers
 
 // DeviceRadixSort
 #pragma kernel InitDeviceRadixSort
@@ -27,6 +28,8 @@
 #pragma require wavebasic
 
 #pragma use_dxc
+
+
 
 #include "DeviceRadixSort.hlsl"
 #include "GaussianSplatting.hlsl"
@@ -751,3 +754,22 @@ void CSCopySplats (uint3 id : SV_DispatchThreadID)
         _CopyDstEditDeleted.InterlockedOr(dstWordIdx * 4, 1u << dstBitIdx);
     }
 }
+
+RWStructuredBuffer<float3> vertexPositions;
+RWStructuredBuffer<float3> vertexNormals;
+
+[numthreads(GROUP_SIZE,1,1)]
+void CSNormBuffers(uint3 id : SV_DispatchThreadID)
+{
+    ////get vertex
+    uint idx = id.x;
+    float3 v0 = vertexPositions[idx];
+    float3 v1 = vertexPositions[idx + 1];
+    float3 v2 = vertexPositions[idx + 2];
+    
+    //calculate normal vector
+    float3 normal = normalize(cross(v1 - v0, v2 - v0));
+    
+    vertexNormals[idx] = normal;
+}
+

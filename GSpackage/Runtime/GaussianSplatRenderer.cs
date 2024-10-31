@@ -135,8 +135,6 @@ namespace GaussianSplatting.Runtime
                 mpb.SetColor("_LightColor", lightColor);
                 mpb.SetVector("_CameraPosition", cameraPos);
 
-                Debug.Log(lightColor);
-
                 //정반사광 강도 및 반사광 지수 전달
                 float specularIntensity = 0.5f;
                 float specularPower = 32.0f;
@@ -252,7 +250,6 @@ namespace GaussianSplatting.Runtime
         public GaussianSplatAsset m_Asset;
 
         // light object 선언
-        // inspector에 왜 안뜨는지 문제 해결 필요
         public Light m_LightObject;
 
         [Range(0.1f, 2.0f)] [Tooltip("Additional scaling factor for the splats")]
@@ -386,6 +383,7 @@ namespace GaussianSplatting.Runtime
             ScaleSelection,
             ExportData,
             CopySplats,
+            NormBuffers,
         }
 
         public bool HasValidAsset =>
@@ -696,6 +694,13 @@ namespace GaussianSplatting.Runtime
             m_CSSplatUtilities.GetKernelThreadGroupSizes((int)KernelIndices.OrBuffers, out uint gsX, out _, out _);
             m_CSSplatUtilities.Dispatch((int)KernelIndices.OrBuffers, (int)((dst.count+gsX-1)/gsX), 1, 1);
         }
+
+        // compute shader를 활용한 normal vector 계산 및 값 전달
+        //void CalculateNormals(GraphicsBuffer normalBuffer)
+        //{
+        //    m_CSSplatUtilities.SetBuffer((int)KernelIndices.NormBuffers, "vertexNormals", normalBuffer);
+        //    m_CSSplatUtilities.Dispatch((int)KernelIndices.NormBuffers, (int)numberOfWorkGroupXdimension, 1, 1);
+        //}
 
         static float SortableUintToFloat(uint v)
         {

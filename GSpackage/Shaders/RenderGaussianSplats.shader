@@ -143,7 +143,9 @@ half4 frag (v2f i) : SV_Target
 	// float specular = pow(max(dot(viewDir, reflectDir), 0.0), _SpecularPower); //스페큘러 강도 계산 (카메라 시선 방향과 반사된 빛의 각도 차이에 따른 정반사광을 계산)
 	// float3 specularColor = _LightColor.rgb * specular * _SpecularIntensity; //스페큘러 색상 적용
 
-	i.col.rgb *=  (_LightColor.rgb + diffuseColor);
+	i.col.rgb *= _LightColor.rgb;
+
+	// i.col.rgb *=  (_LightColor.rgb + diffuseColor);
 	// i.col.rgb *= (diffuseColor + specularColor);
 
 
