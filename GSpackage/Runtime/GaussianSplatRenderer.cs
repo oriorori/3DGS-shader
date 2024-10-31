@@ -29,6 +29,7 @@ namespace GaussianSplatting.Runtime
         readonly List<(GaussianSplatRenderer, MaterialPropertyBlock)> m_ActiveSplats = new();
 
         public Light lightObject;
+        public ComputeBuffer normalVectors;
 
         CommandBuffer m_CommandBuffer;
 
@@ -45,6 +46,10 @@ namespace GaussianSplatting.Runtime
         public void SetLightObject(Light _lightObject)
         {
             lightObject = _lightObject;
+        }
+        public void SetNormData(ComputeBuffer _normalVectors)
+        {
+            normalVectors = _normalVectors;
         }
 
         public void UnregisterSplat(GaussianSplatRenderer r)
@@ -141,6 +146,8 @@ namespace GaussianSplatting.Runtime
                 mpb.SetFloat("_SpecularIntensity", specularIntensity);
                 mpb.SetFloat("_SpecularPower", specularPower);
 
+                //normalVector 전달
+                mpb.SetBuffer("_NormalVectors", normalVectors);
 
                 // sort
                 var matrix = gs.transform.localToWorldMatrix;
@@ -191,6 +198,8 @@ namespace GaussianSplatting.Runtime
                 cmb.BeginSample(s_ProfDraw);
                 cmb.DrawProcedural(gs.m_GpuIndexBuffer, matrix, displayMat, 0, topology, indexCount, instanceCount, mpb);
                 cmb.EndSample(s_ProfDraw);
+
+
             }
             return matComposite;
         }
@@ -288,6 +297,7 @@ namespace GaussianSplatting.Runtime
         internal bool m_GpuChunksValid;
         internal GraphicsBuffer m_GpuView;
         internal GraphicsBuffer m_GpuIndexBuffer;
+        internal ComputeBuffer m_GpuNormData;
 
         // these buffers are only for splat editing, and are lazily created
         GraphicsBuffer m_GpuEditCutouts;
@@ -355,6 +365,8 @@ namespace GaussianSplatting.Runtime
             public static readonly int SelectionMode = Shader.PropertyToID("_SelectionMode");
             public static readonly int SplatPosMouseDown = Shader.PropertyToID("_SplatPosMouseDown");
             public static readonly int SplatOtherMouseDown = Shader.PropertyToID("_SplatOtherMouseDown");
+            public static readonly int VertexPosition = Shader.PropertyToID("_VertexPositions");
+            public static readonly int VecNormals = Shader.PropertyToID("_VecNormals");
         }
 
         [field: NonSerialized] public bool editModified { get; private set; }
@@ -416,6 +428,8 @@ namespace GaussianSplatting.Runtime
             tex.SetPixelData(asset.colorData.GetData<byte>(), 0);
             tex.Apply(false, true);
             m_GpuColorData = tex;
+
+
             if (asset.chunkData != null && asset.chunkData.dataSize != 0)
             {
                 m_GpuChunks = new GraphicsBuffer(GraphicsBuffer.Target.Structured,
@@ -488,6 +502,19 @@ namespace GaussianSplatting.Runtime
             GaussianSplatRenderSystem.instance.SetLightObject(m_LightObject);
 
             CreateResourcesForAsset();
+
+            
+            m_GpuNormData = new ComputeBuffer(m_SplatCount, sizeof(float) * 3);
+            CalculateNormals(m_GpuNormData, m_SplatCount);
+            GaussianSplatRenderSystem.instance.SetNormData(m_GpuNormData);
+
+            //Vector3[] bufferdata = new Vector3[m_SplatCount];
+            //m_GpuNormData.GetData(bufferdata);
+            //for (int i = 0; i < m_SplatCount; i++)
+            //{
+            //    Debug.Log($"{bufferdata[i]}");
+            //}
+            //Debug.Log(m_SplatCount);
         }
 
         void SetAssetDataOnCS(CommandBuffer cmb, KernelIndices kernel)
@@ -579,6 +606,7 @@ namespace GaussianSplatting.Runtime
             DestroyImmediate(m_MatComposite);
             DestroyImmediate(m_MatDebugPoints);
             DestroyImmediate(m_MatDebugBoxes);
+            m_GpuNormData.Release();
         }
 
         internal void CalcViewData(CommandBuffer cmb, Camera cam, Matrix4x4 matrix)
@@ -695,12 +723,14 @@ namespace GaussianSplatting.Runtime
             m_CSSplatUtilities.Dispatch((int)KernelIndices.OrBuffers, (int)((dst.count+gsX-1)/gsX), 1, 1);
         }
 
-        // compute shader를 활용한 normal vector 계산 및 값 전달
-        //void CalculateNormals(GraphicsBuffer normalBuffer)
-        //{
-        //    m_CSSplatUtilities.SetBuffer((int)KernelIndices.NormBuffers, "vertexNormals", normalBuffer);
-        //    m_CSSplatUtilities.Dispatch((int)KernelIndices.NormBuffers, (int)numberOfWorkGroupXdimension, 1, 1);
-        //}
+        //compute shader를 활용한 normal vector 계산 및 값 전달
+        void CalculateNormals(ComputeBuffer normalBuffer, int count)
+        {
+            m_CSSplatUtilities.SetBuffer((int)KernelIndices.NormBuffers, Props.VecNormals, normalBuffer);
+            m_CSSplatUtilities.SetBuffer((int)KernelIndices.NormBuffers, Props.VertexPosition, m_GpuPosData);
+            m_CSSplatUtilities.GetKernelThreadGroupSizes((int)KernelIndices.NormBuffers, out uint gsX, out _, out _);
+            m_CSSplatUtilities.Dispatch((int)KernelIndices.NormBuffers, (count+(int)gsX-1)/(int)gsX, 1, 1);
+        }
 
         static float SortableUintToFloat(uint v)
         {

@@ -32,11 +32,16 @@ CGPROGRAM
 
 StructuredBuffer<uint> _OrderBuffer; //스플랫들의 렌더링 순서를 정의
 
+StructuredBuffer<float3> _NormalVectors; //normal vector들을 저장하는 버퍼
+
+
+
 struct v2f
 {
     half4 col : COLOR0;
     float2 pos : TEXCOORD0;
     float4 vertex : SV_POSITION;
+	float3 normal : NORMAL;
 };
 
 StructuredBuffer<SplatViewData> _SplatViewData; //각 스플랫의 뷰 데이터를 저장하는 구조화된 버퍼
@@ -57,6 +62,9 @@ v2f vert (uint vtxID : SV_VertexID, uint instID : SV_InstanceID)
     v2f o = (v2f)0;
     instID = _OrderBuffer[instID];
 	SplatViewData view = _SplatViewData[instID];
+
+	o.normal = _NormalVectors[instID]; // fragment shader에 normal vector 전달
+
 	float4 centerClipPos = view.pos;
 	bool behindCam = centerClipPos.w <= 0;
 	if (behindCam)
@@ -130,7 +138,7 @@ half4 frag (v2f i) : SV_Target
 
 	//normal vector 수정 필요
 	//현재 vertex와 인접한 vertex를 사용해 만든 삼각형의 normal vector를 구하는식으로
-	float3 normal = float3(0, 0, 1);
+	float3 normal = i.normal;
 
 	// float3 viewDir = normalize(_CameraPosition - i.worldPos); //카메라에서 스플랫까지의 방향
 	// float3 reflectDir = reflect(-lightDir, normal); // 반사된 빛의 방향(원이 표면에 닿아 반사된 방향을 계산)
@@ -143,7 +151,7 @@ half4 frag (v2f i) : SV_Target
 	// float specular = pow(max(dot(viewDir, reflectDir), 0.0), _SpecularPower); //스페큘러 강도 계산 (카메라 시선 방향과 반사된 빛의 각도 차이에 따른 정반사광을 계산)
 	// float3 specularColor = _LightColor.rgb * specular * _SpecularIntensity; //스페큘러 색상 적용
 
-	i.col.rgb *= _LightColor.rgb;
+	i.col.rgb *= ( diffuseColor);
 
 	// i.col.rgb *=  (_LightColor.rgb + diffuseColor);
 	// i.col.rgb *= (diffuseColor + specularColor);
