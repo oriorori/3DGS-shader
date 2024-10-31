@@ -517,6 +517,22 @@ namespace GaussianSplatting.Runtime
             //Debug.Log(m_SplatCount);
         }
 
+        private void OnDrawGizmos()
+        {
+            Gizmos.color = new Color(1, 0, 0, 0.5f);
+            Vector3[] bufferdata1 = new Vector3[m_SplatCount];
+            m_GpuNormData.GetData(bufferdata1);
+            Vector3[] bufferdata2 = new Vector3[m_SplatCount];
+            m_GpuPosData.GetData(bufferdata2);
+            for (int i = 0; i < m_SplatCount; i++)
+            {
+                Gizmos.DrawRay(bufferdata2[i], bufferdata1[i]*0.2f);
+            }
+
+
+        }
+
+
         void SetAssetDataOnCS(CommandBuffer cmb, KernelIndices kernel)
         {
             ComputeShader cs = m_CSSplatUtilities;
