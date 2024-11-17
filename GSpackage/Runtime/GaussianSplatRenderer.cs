@@ -53,14 +53,14 @@ namespace GaussianSplatting.Runtime
             normalVectors = _normalVectors;
 
             //Vector3 lightdir = Vector3.Normalize(lightObject.transform.forward);
-            //Color lightcol = lightObject.color;
-            //Vector3 col = new Vector3(lightcol.r, lightcol.g, lightcol.b);
             //Vector3[] bufferdata1 = new Vector3[normalVectors.count];
             //normalVectors.GetData(bufferdata1);
+            //int count = 0;
             //for (int i = 0; i < normalVectors.count; i++)
             //{
-            //    Debug.Log(Math.Max(Vector3.Dot(bufferdata1[i], lightdir), 0.0f) * col);
+            //    if (Vector3.Dot(lightdir, bufferdata1[i]) > 0) count++;
             //}
+            //Debug.Log(count);
         }
 
         public void UnregisterSplat(GaussianSplatRenderer r)
@@ -144,22 +144,8 @@ namespace GaussianSplatting.Runtime
                 Vector3 lightPos = lightObject.transform.position;
                 Color lightColor = lightObject.color * lightObject.intensity;
                 Vector3 cameraPos = cam.transform.position;
-
-                // 머티리얼 프로퍼티에 광원 데이터, 뷰 방향 전달
-                mpb.SetVector("_LightDirection", lightDir);
-                mpb.SetVector("_LightPosition", lightPos);
-                mpb.SetColor("_LightColor", lightColor);
-                mpb.SetVector("_CameraPosition", cameraPos);
-
-
-                //정반사광 강도 및 반사광 지수 전달
                 float specularIntensity = 0.5f;
                 float specularPower = 32.0f;
-                mpb.SetFloat("_SpecularIntensity", specularIntensity);
-                mpb.SetFloat("_SpecularPower", specularPower);
-
-                //normalVector 전달
-                mpb.SetBuffer("_NormalVectors", normalVectors);
 
                 // sort
                 var matrix = gs.transform.localToWorldMatrix;
@@ -182,10 +168,22 @@ namespace GaussianSplatting.Runtime
 
                 gs.SetAssetDataOnMaterial(mpb);
                 mpb.SetBuffer(GaussianSplatRenderer.Props.SplatChunks, gs.m_GpuChunks);
-
                 mpb.SetBuffer(GaussianSplatRenderer.Props.SplatViewData, gs.m_GpuView);
-
                 mpb.SetBuffer(GaussianSplatRenderer.Props.OrderBuffer, gs.m_GpuSortKeys);
+
+                // 머티리얼 프로퍼티에 광원 데이터, 뷰 방향 전달
+                mpb.SetVector("_LightDirection", lightDir);
+                mpb.SetVector("_LightPosition", lightPos);
+                mpb.SetColor("_LightColor", lightColor);
+                mpb.SetVector("_CameraPosition", cameraPos);
+
+                //정반사광 강도 및 반사광 지수 전달
+                mpb.SetFloat("_SpecularIntensity", specularIntensity);
+                mpb.SetFloat("_SpecularPower", specularPower);
+
+                //normalVector 전달
+                mpb.SetBuffer("_NormalVectors", normalVectors);
+
                 mpb.SetFloat(GaussianSplatRenderer.Props.SplatScale, gs.m_SplatScale);
                 mpb.SetFloat(GaussianSplatRenderer.Props.SplatOpacityScale, gs.m_OpacityScale);
                 mpb.SetFloat(GaussianSplatRenderer.Props.SplatSize, gs.m_PointDisplaySize);

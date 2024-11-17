@@ -129,6 +129,7 @@ half4 frag (v2f i) : SV_Target
 	
 	//일단 directional light object로 진행
 	float3 lightDir = normalize(_LightDirection.xyz);
+	float3 lightCol = normalize(_LightColor.rgb);
 
 	//point light object로 변경시 아래처럼 변경
 	//float3 currentPos = i.vertex.xyz;
@@ -149,13 +150,10 @@ half4 frag (v2f i) : SV_Target
 	// float specular = pow(max(dot(viewDir, reflectDir), 0.0), _SpecularPower); //스페큘러 강도 계산 (카메라 시선 방향과 반사된 빛의 각도 차이에 따른 정반사광을 계산)
 	// float3 specularColor = _LightColor.rgb * specular * _SpecularIntensity; //스페큘러 색상 적용
 
-	// i.col.rgb = i.col.rgb * diffuseColor;
-	i.col.rgb *= _LightColor.rgb;
+	i.col.rgb *= diffuseColor;
 
 	// i.col.rgb *=  (_LightColor.rgb + diffuseColor);
 	// i.col.rgb *= (diffuseColor + specularColor);
-
-
 
     if (alpha < 1.0/255.0); //투명도가 1/255 이하이면 해당 프래그먼트를 렌더링하지 않음
 
