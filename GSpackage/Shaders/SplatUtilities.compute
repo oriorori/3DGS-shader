@@ -757,6 +757,7 @@ void CSCopySplats (uint3 id : SV_DispatchThreadID)
 
 RWStructuredBuffer<float3> _VertexPositions;
 RWStructuredBuffer<float3> _VecNormals;
+float3 _Centroid;
 
 [numthreads(GROUP_SIZE,1,1)]
 void CSNormBuffers(uint3 id : SV_DispatchThreadID)
@@ -786,12 +787,12 @@ void CSNormBuffers(uint3 id : SV_DispatchThreadID)
             idx2 = i;
         }
     }
-    
     float3 v1 = _VertexPositions[idx1];
     float3 v2 = _VertexPositions[idx2];
     
     //calculate normal vector
     float3 normal = normalize(cross(v1 - v0, v2 - v0));
+    normal = dot(normal, v0 - _Centroid) >= 0 ? normal : normal * (-1);
     
     _VecNormals[idx] = normal;
 }

@@ -31,6 +31,7 @@ namespace GaussianSplatting.Runtime
         public Light lightObject;
         public ComputeBuffer normalVectors;
 
+
         CommandBuffer m_CommandBuffer;
 
         public void RegisterSplat(GaussianSplatRenderer r)
@@ -50,6 +51,16 @@ namespace GaussianSplatting.Runtime
         public void SetNormData(ComputeBuffer _normalVectors)
         {
             normalVectors = _normalVectors;
+
+            //Vector3 lightdir = Vector3.Normalize(lightObject.transform.forward);
+            //Color lightcol = lightObject.color;
+            //Vector3 col = new Vector3(lightcol.r, lightcol.g, lightcol.b);
+            //Vector3[] bufferdata1 = new Vector3[normalVectors.count];
+            //normalVectors.GetData(bufferdata1);
+            //for (int i = 0; i < normalVectors.count; i++)
+            //{
+            //    Debug.Log(Math.Max(Vector3.Dot(bufferdata1[i], lightdir), 0.0f) * col);
+            //}
         }
 
         public void UnregisterSplat(GaussianSplatRenderer r)
@@ -139,6 +150,7 @@ namespace GaussianSplatting.Runtime
                 mpb.SetVector("_LightPosition", lightPos);
                 mpb.SetColor("_LightColor", lightColor);
                 mpb.SetVector("_CameraPosition", cameraPos);
+
 
                 //정반사광 강도 및 반사광 지수 전달
                 float specularIntensity = 0.5f;
@@ -517,20 +529,32 @@ namespace GaussianSplatting.Runtime
             //Debug.Log(m_SplatCount);
         }
 
-        private void OnDrawGizmos()
-        {
-            Gizmos.color = new Color(1, 0, 0, 0.5f);
-            Vector3[] bufferdata1 = new Vector3[m_SplatCount];
-            m_GpuNormData.GetData(bufferdata1);
-            Vector3[] bufferdata2 = new Vector3[m_SplatCount];
-            m_GpuPosData.GetData(bufferdata2);
-            for (int i = 0; i < m_SplatCount; i++)
-            {
-                Gizmos.DrawRay(bufferdata2[i], bufferdata1[i]*0.2f);
-            }
-
-
-        }
+        //private void OnDrawGizmos()
+        //{
+        //    //for debugging
+        //    float rayLength = 2.0f;
+        //    float arrowLength = 0.5f;
+        //    Color rayColor = new Color(1, 0, 0, 0.3f);
+        //    Color arrowColor = new Color(0, 1, 1, 0.3f);
+        //    Vector3[] bufferdata1 = new Vector3[m_SplatCount];
+        //    m_GpuNormData.GetData(bufferdata1);
+        //    Vector3[] bufferdata2 = new Vector3[m_SplatCount];
+        //    m_GpuPosData.GetData(bufferdata2);
+        //    for (int i = 0; i < m_SplatCount; i++)
+        //    {
+        //        if (i % 30 == 0)
+        //        {
+        //            Gizmos.color = rayColor;
+        //            Gizmos.DrawRay(bufferdata2[i], bufferdata1[i] * rayLength);
+        //            Vector3 endposition = (bufferdata2[i] + bufferdata1[i]*rayLength);
+        //            Vector3 right = Quaternion.LookRotation(bufferdata1[i]) * Quaternion.Euler(0, 160, 0) * Vector3.forward;
+        //            Vector3 left = Quaternion.LookRotation(bufferdata1[i]) * Quaternion.Euler(0, -160, 0) * Vector3.forward;
+        //            Gizmos.color = arrowColor;
+        //            Gizmos.DrawLine(endposition, endposition + right * 0.3f * arrowLength);
+        //            Gizmos.DrawLine(endposition, endposition + left * 0.3f * arrowLength);
+        //        }
+        //    }
+        //}
 
 
         void SetAssetDataOnCS(CommandBuffer cmb, KernelIndices kernel)
@@ -742,10 +766,25 @@ namespace GaussianSplatting.Runtime
         //compute shader를 활용한 normal vector 계산 및 값 전달
         void CalculateNormals(ComputeBuffer normalBuffer, int count)
         {
+
             m_CSSplatUtilities.SetBuffer((int)KernelIndices.NormBuffers, Props.VecNormals, normalBuffer);
             m_CSSplatUtilities.SetBuffer((int)KernelIndices.NormBuffers, Props.VertexPosition, m_GpuPosData);
+            m_CSSplatUtilities.SetVector("_Centroid", CalculateCentroid());
             m_CSSplatUtilities.GetKernelThreadGroupSizes((int)KernelIndices.NormBuffers, out uint gsX, out _, out _);
             m_CSSplatUtilities.Dispatch((int)KernelIndices.NormBuffers, (count+(int)gsX-1)/(int)gsX, 1, 1);
+        }
+
+        Vector3 CalculateCentroid()
+        {
+            Vector3 centroid = new Vector3();
+
+            Vector3[] bufferdata1 = new Vector3[m_SplatCount];
+            m_GpuPosData.GetData(bufferdata1);
+            foreach(Vector3 v in bufferdata1)
+            {
+                centroid += v;
+            }
+            return centroid/m_SplatCount;
         }
 
         static float SortableUintToFloat(uint v)
