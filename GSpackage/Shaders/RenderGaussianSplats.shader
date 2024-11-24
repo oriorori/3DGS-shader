@@ -40,6 +40,7 @@ struct v2f
     float2 pos : TEXCOORD0;
     float4 vertex : SV_POSITION;
 	float3 normal : NORMAL;
+	float3 worldPos : TEXCOORD1;
 };
 
 StructuredBuffer<SplatViewData> _SplatViewData; //각 스플랫의 뷰 데이터를 저장하는 구조화된 버퍼
@@ -85,6 +86,9 @@ v2f vert (uint vtxID : SV_VertexID, uint instID : SV_InstanceID)
 		float2 deltaScreenPos = (quadPos.x * view.axis1 + quadPos.y * view.axis2) * 2 / _ScreenParams.xy; //화면 상에서 스플랫의 위치를 조정
 		o.vertex = centerClipPos;
 		o.vertex.xy += deltaScreenPos * centerClipPos.w;
+
+		float4 modelPosition = float4(view.pos.xyz, 1.0);
+        o.worldPos = mul(unity_ObjectToWorld, modelPosition).xyz; // 모델 좌표 -> 월드 좌표로 변환
 
 		// is this splat selected?
 		if (_SplatBitsValid) //활성화되어 있으면 선택된 스플랫을 확인하고, 선택된 경우 알파 값을 -1로 설정
@@ -139,16 +143,16 @@ half4 frag (v2f i) : SV_Target
 	//현재 vertex와 인접한 vertex를 사용해 만든 삼각형의 normal vector를 구하는식으로
 	float3 normal = i.normal;
 
-	// float3 viewDir = normalize(_CameraPosition - i.worldPos); //카메라에서 스플랫까지의 방향
-	// float3 reflectDir = reflect(-lightDir, normal); // 반사된 빛의 방향(원이 표면에 닿아 반사된 방향을 계산)
+	float3 viewDir = normalize(_CameraPosition - i.worldPos); //카메라에서 스플랫까지의 방향
+	float3 reflectDir = reflect(-lightDir, normal); // 반사된 빛의 방향(원이 표면에 닿아 반사된 방향을 계산)
 
 	// diffuse 계산
 	float diffuse = max(dot(normal, lightDir), 0.0);
 	float3 diffuseColor = _LightColor.rgb * diffuse;
 	
 	// 정반사관 (phongshading) 계산 추가
-	// float specular = pow(max(dot(viewDir, reflectDir), 0.0), _SpecularPower); //스페큘러 강도 계산 (카메라 시선 방향과 반사된 빛의 각도 차이에 따른 정반사광을 계산)
-	// float3 specularColor = _LightColor.rgb * specular * _SpecularIntensity; //스페큘러 색상 적용
+	float specular = pow(max(dot(viewDir, reflectDir), 0.0), _SpecularPower); //스페큘러 강도 계산 (카메라 시선 방향과 반사된 빛의 각도 차이에 따른 정반사광을 계산)
+	float3 specularColor = _LightColor.rgb * specular * _SpecularIntensity; //스페큘러 색상 적용
 
 	i.col.rgb *= diffuseColor;
 
