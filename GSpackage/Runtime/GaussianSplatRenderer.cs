@@ -527,32 +527,32 @@ namespace GaussianSplatting.Runtime
             //Debug.Log(m_SplatCount);
         }
 
-        //private void OnDrawGizmos()
-        //{
-        //    //for debugging
-        //    float rayLength = 2.0f;
-        //    float arrowLength = 0.5f;
-        //    Color rayColor = new Color(1, 0, 0, 0.3f);
-        //    Color arrowColor = new Color(0, 1, 1, 0.3f);
-        //    Vector3[] bufferdata1 = new Vector3[m_SplatCount];
-        //    m_GpuNormData.GetData(bufferdata1);
-        //    Vector3[] bufferdata2 = new Vector3[m_SplatCount];
-        //    m_GpuPosData.GetData(bufferdata2);
-        //    for (int i = 0; i < m_SplatCount; i++)
-        //    {
-        //        if (i % 30 == 0)
-        //        {
-        //            Gizmos.color = rayColor;
-        //            Gizmos.DrawRay(bufferdata2[i], bufferdata1[i] * rayLength);
-        //            Vector3 endposition = (bufferdata2[i] + bufferdata1[i]*rayLength);
-        //            Vector3 right = Quaternion.LookRotation(bufferdata1[i]) * Quaternion.Euler(0, 160, 0) * Vector3.forward;
-        //            Vector3 left = Quaternion.LookRotation(bufferdata1[i]) * Quaternion.Euler(0, -160, 0) * Vector3.forward;
-        //            Gizmos.color = arrowColor;
-        //            Gizmos.DrawLine(endposition, endposition + right * 0.3f * arrowLength);
-        //            Gizmos.DrawLine(endposition, endposition + left * 0.3f * arrowLength);
-        //        }
-        //    }
-        //}
+        private void OnDrawGizmos()
+        {
+           //for debugging
+           float rayLength = 2.0f;
+           float arrowLength = 0.5f;
+           Color rayColor = new Color(1, 0, 0, 0.3f);
+           Color arrowColor = new Color(0, 1, 1, 0.3f);
+           Vector3[] bufferdata1 = new Vector3[m_SplatCount];
+           m_GpuNormData.GetData(bufferdata1);
+           Vector3[] bufferdata2 = new Vector3[m_SplatCount];
+           m_GpuPosData.GetData(bufferdata2);
+           for (int i = 0; i < m_SplatCount; i++)
+           {
+               if (i % 30 == 0)
+               {
+                   Gizmos.color = rayColor;
+                   Gizmos.DrawRay(bufferdata2[i], bufferdata1[i] * rayLength);
+                   Vector3 endposition = (bufferdata2[i] + bufferdata1[i]*rayLength);
+                   Vector3 right = Quaternion.LookRotation(bufferdata1[i]) * Quaternion.Euler(0, 160, 0) * Vector3.forward;
+                   Vector3 left = Quaternion.LookRotation(bufferdata1[i]) * Quaternion.Euler(0, -160, 0) * Vector3.forward;
+                   Gizmos.color = arrowColor;
+                   Gizmos.DrawLine(endposition, endposition + right * 0.3f * arrowLength);
+                   Gizmos.DrawLine(endposition, endposition + left * 0.3f * arrowLength);
+               }
+           }
+        }
 
 
         void SetAssetDataOnCS(CommandBuffer cmb, KernelIndices kernel)
@@ -764,7 +764,6 @@ namespace GaussianSplatting.Runtime
         //compute shader를 활용한 normal vector 계산 및 값 전달
         void CalculateNormals(ComputeBuffer normalBuffer, int count)
         {
-
             m_CSSplatUtilities.SetBuffer((int)KernelIndices.NormBuffers, Props.VecNormals, normalBuffer);
             m_CSSplatUtilities.SetBuffer((int)KernelIndices.NormBuffers, Props.VertexPosition, m_GpuPosData);
             m_CSSplatUtilities.SetVector("_Centroid", CalculateCentroid());
