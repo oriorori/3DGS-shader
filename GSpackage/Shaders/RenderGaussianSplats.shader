@@ -146,6 +146,10 @@ half4 frag (v2f i) : SV_Target
 	float3 viewDir = normalize(_CameraPosition - i.worldPos); //카메라에서 스플랫까지의 방향
 	float3 reflectDir = reflect(-lightDir, normal); // 반사된 빛의 방향(원이 표면에 닿아 반사된 방향을 계산)
 
+	// ambient
+	// 임의의 intensity 값으로 주변광을 계산
+	float3 ambientColor = 0.5 * _LightColor.rgb; //주변광 계산
+
 	// diffuse 계산
 	float diffuse = max(dot(normal, lightDir), 0.0);
 	float3 diffuseColor = _LightColor.rgb * diffuse;
@@ -154,10 +158,8 @@ half4 frag (v2f i) : SV_Target
 	float specular = pow(max(dot(viewDir, reflectDir), 0.0), _SpecularPower); //스페큘러 강도 계산 (카메라 시선 방향과 반사된 빛의 각도 차이에 따른 정반사광을 계산)
 	float3 specularColor = _LightColor.rgb * specular * _SpecularIntensity; //스페큘러 색상 적용
 
-	i.col.rgb *= diffuseColor;
-
-	// i.col.rgb *=  (_LightColor.rgb + diffuseColor);
-	// i.col.rgb *= (diffuseColor + specularColor);
+	float3 finalColor = ambientColor + (diffuseColor + specularColor) * alpha;
+	i.col.rgb *= saturate(finalColor);
 
     if (alpha < 1.0/255.0); //투명도가 1/255 이하이면 해당 프래그먼트를 렌더링하지 않음
 
